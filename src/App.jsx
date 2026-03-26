@@ -43,13 +43,13 @@ function App() {
       badge: "Customization",
       title: "Premium Themes",
       description: "Make LManwa yours. Choose from a variety of premium themes, ranging from classic dark modes to character-inspired aesthetics.",
-      image: "/assets/screenshot-themes.png"
+      image: "assets/screenshot-themes.png"
     },
     {
       badge: "Discovery",
       title: "Smart Search & Filters",
       description: "Find your next read across connected translation sources instantly with deep filters support.",
-      image: "/assets/screenshot-themes.png",
+      image: "assets/screenshot-themes.png",
       reverse: true
     }
   ]
@@ -70,7 +70,7 @@ function App() {
       <nav className="navbar">
         <div className="nav-container">
           <div className="nav-logo">
-            <img src="/assets/icon.png" alt="Logo" className="nav-icon" />
+            <img src="assets/icon.png" alt="Logo" className="nav-icon" />
             <span>LManwa</span>
           </div>
           <div className="nav-links">
@@ -87,7 +87,7 @@ function App() {
       <header className="hero-section">
         <div className="hero-card">
           <div className="icon-container">
-            <img src="/assets/icon.png" alt="LManwa Icon" className="app-icon" />
+            <img src="assets/icon.png" alt="LManwa Icon" className="app-icon" />
           </div>
           <span className="badge">Version 1.0.13</span>
           <h1>LManwa</h1>
