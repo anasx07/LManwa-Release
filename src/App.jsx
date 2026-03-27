@@ -105,7 +105,7 @@ function App() {
               Repo Release Page
             </a>
              <a 
-              href="https://github.com/anasx07/LManwa/releases/latest" 
+              href="https://github.com/anasx07/LManwa-Release/releases/download/v1.0.52/AutaKimi.exe" 
               className="download-btn"
             >
               <Download className="inline-icon" />
