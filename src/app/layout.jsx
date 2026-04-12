@@ -14,6 +14,11 @@ const outfit = Outfit({
 export const metadata = {
   title: "AutaKimi - The Ultimate Manga Reader",
   description: "The ultimate manga experience on Windows. Open-source, extensible, and built for speed.",
+  icons: {
+    icon: "/favicon.svg",
+    shortcut: "/favicon.svg",
+    apple: "/assets/icon.png",
+  },
   verification: {
     google: "oLob_47r8e6mHEe8beX6u_sSm-eGtaljDpJQkZ_jeuw",
   },
