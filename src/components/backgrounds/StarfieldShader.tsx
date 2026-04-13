@@ -16,7 +16,6 @@ const fragmentShaderSource = `
   varying vec2 vUv;
   uniform float uTime;
   uniform vec2 uResolution;
-  uniform vec2 uMouse;
 
   // Pseudo-random function
   float hash21(vec2 p) {
@@ -25,10 +24,35 @@ const fragmentShaderSource = `
     return fract(p.x * p.y);
   }
 
+  // 2D Noise based on hash
+  float noise(in vec2 p) {
+    vec2 i = floor(p);
+    vec2 f = fract(p);
+    vec2 u = f*f*(3.0-2.0*f);
+    return mix( mix( hash21( i + vec2(0.0,0.0) ), 
+                     hash21( i + vec2(1.0,0.0) ), u.x),
+                mix( hash21( i + vec2(0.0,1.0) ), 
+                     hash21( i + vec2(1.0,1.0) ), u.x), u.y);
+  }
+
+  // Fractal Brownian Motion for volumetric nebula
+  float fbm(vec2 p) {
+    float f = 0.0;
+    float amp = 0.5;
+    mat2 m = mat2( 1.6,  1.2, -1.2,  1.6 );
+    for(int i=0; i<5; i++){
+      f += amp * noise(p);
+      p = m * p;
+      amp *= 0.5;
+    }
+    return f;
+  }
+
   // Draw a star shape
   float star(vec2 uv, float flare) {
     float d = length(uv);
     float m = 0.05 / d;
+    m *= smoothstep(1.0, 0.1, d); // Taper off to avoid square bounding boxes
     
     float rays = max(0.0, 1.0 - abs(uv.x * uv.y * 1000.0));
     m += rays * flare;
@@ -38,8 +62,7 @@ const fragmentShaderSource = `
     rays = max(0.0, 1.0 - abs(uv.x * uv.y * 1000.0));
     m += rays * 0.3 * flare;
 
-    m *= smoothstep(1.0, 0.2, d);
-    return m;
+    return m * smoothstep(1.0, 0.1, d);
   }
 
   vec3 starLayer(vec2 uv) {
@@ -53,18 +76,17 @@ const fragmentShaderSource = `
         float n = hash21(id + offs); // random value between 0 and 1
         
         float size = fract(n * 345.32);
-        
         vec2 p = offs - gv + vec2(n, fract(n * 34.0)) - 0.5;
         
-        float flare = smoothstep(0.8, 1.0, size);
+        float flare = smoothstep(0.9, 1.0, size);
         float starVal = star(p, flare) * size;
         
-        // Color variation (AutaKimi palette: purples, blues, white)
-        vec3 color = sin(vec3(0.2, 0.3, 0.9) * fract(n * 2345.2) * 123.2) * 0.5 + 0.5;
-        color = mix(color, vec3(0.6, 0.2, 1.0), 0.5); // Bias towards purple
+        // Color variation (Premium AutaKimi palette: deep indigos, lavenders, pinks)
+        vec3 color = sin(vec3(0.2, 0.5, 0.9) * fract(n * 2345.2) * 123.2) * 0.5 + 0.5;
+        color = mix(color, vec3(0.8, 0.4, 1.0), 0.6); // Bias towards vivid purple/pink
         
-        // Twinkle
-        starVal *= sin(uTime * 3.0 + n * 6.2831) * 0.4 + 0.6;
+        // Atmospheric Twinkle
+        starVal *= sin(uTime * 2.0 + n * 6.2831) * 0.4 + 0.8;
         
         col += starVal * color;
       }
@@ -76,27 +98,49 @@ const fragmentShaderSource = `
     // Normalize and fix aspect ratio
     vec2 uv = (gl_FragCoord.xy - 0.5 * uResolution.xy) / uResolution.y;
     
-    // Cinematic motion (forward and slightly right)
-    vec2 drift = vec2(uTime * 0.05, uTime * 0.01);
-
-    float t = uTime * 0.05;
-    
+    float t = uTime * 2.8; // Base speed of the spaceship
     vec3 col = vec3(0.0);
     
-    // Base dark background
-    col += vec3(0.02, 0.01, 0.05);
+    // Cinematic Spaceship Translation
+    // User requested ship travelling Right to Left (-X).
+    // Therefore, the background elements must scroll Left to Right (+X).
+    // Subtracting from the UV causes the texture to pan rightwards.
+    vec2 globalOffset = vec2(-t * 0.15, 0.0);
 
-    // Multiple layers of stars for parallax effect
-    for(float i=0.0; i<1.0; i+=1.0/4.0) {
-      float depth = fract(i + t);
-      float scale = mix(10.0, 0.5, depth);
-      float fade = depth * smoothstep(1.0, 0.9, depth);
+    // Abstract volumetric nebula background (The deepest layer, moving incredibly slowly)
+    vec2 nebUv = uv * 1.5 + globalOffset * 0.1;
+    float dust1 = fbm(nebUv + vec2(t * 0.05, sin(t * 0.05) * 0.1));
+    float dust2 = fbm(nebUv * 3.0 - vec2(cos(t * 0.08) * 0.1, t * 0.04));
+    
+    // Multi-layered deep space clouds colored with Kiwi Night tokens
+    vec3 nebColor1 = vec3(0.04, 0.01, 0.15) * dust1 * 3.0; // Deep space indigo
+    vec3 nebColor2 = vec3(0.25, 0.05, 0.45) * dust2 * 1.5; // Neon purple hues
+    col += nebColor1 + nebColor2;
+
+    // Fixed-depth Parallax Star Layers (Spaceship Window Effect)
+    for(float i=1.0; i<=5.0; i+=1.0) {
+      // Depth calculation: 1.0 is closest, 5.0 is furthest away
+      float layerDepth = i;
+      float parallaxScale = layerDepth * 2.5; 
       
-      // Cinematic drift scales differently per layer (parallax)
-      vec2 layerUv = uv + drift * (i * 2.0);
+      // Speed divides by depth: Closer elements whip past, distant stars barely move
+      vec2 layerOffset = globalOffset / layerDepth;
       
-      col += starLayer(layerUv * scale + i * 453.2) * fade;
+      // Add a microscopic camera float/sway (simulates ship vibrating or orbiting)
+      layerOffset.y += sin(t * 0.2 + i * 1.2) * 0.01 / layerDepth;
+      
+      vec2 layerUv = uv + layerOffset;
+      
+      // Distant stars fade out physically into the nebula fog
+      float fade = smoothstep(5.5, 0.5, layerDepth);
+      
+      // Offset each plane randomly so stars don't stack
+      col += starLayer(layerUv * parallaxScale + vec2(i * 453.2, i * 123.5)) * fade;
     }
+    
+    // Spaceship glass window vignette (focuses the center)
+    float vignette = 1.0 - length(uv) * 0.5;
+    col *= smoothstep(0.0, 1.0, vignette);
     
     gl_FragColor = vec4(col, 1.0);
   }
@@ -137,8 +181,8 @@ export default function StarfieldShader() {
     gl.linkProgram(program);
 
     const vertices = new Float32Array([
-      -1, -1,  1, -1,  -1, 1,
-      -1,  1,  1, -1,   1, 1
+      -1, -1, 1, -1, -1, 1,
+      -1, 1, 1, -1, 1, 1
     ]);
 
     const buffer = gl.createBuffer();
@@ -166,7 +210,7 @@ export default function StarfieldShader() {
 
     const render = (time: number) => {
       const deltaT = (time - startTime) / 1000;
-      
+
       gl.useProgram(program);
       gl.uniform1f(timeLoc, deltaT);
       gl.uniform2f(resLoc, canvas.width, canvas.height);
