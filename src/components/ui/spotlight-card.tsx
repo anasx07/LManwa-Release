@@ -9,6 +9,7 @@ export interface GlowCardProps {
   width?: string | number;
   height?: string | number;
   customSize?: boolean;
+  style?: React.CSSProperties;
 }
 
 const glowColorMap = {
@@ -32,7 +33,8 @@ const GlowCard: React.FC<GlowCardProps> = ({
   size = 'md',
   width,
   height,
-  customSize = false
+  customSize = false,
+  style = {}
 }) => {
   const cardRef = useRef<HTMLDivElement>(null);
   const innerRef = useRef<HTMLDivElement>(null);
@@ -177,7 +179,7 @@ const GlowCard: React.FC<GlowCardProps> = ({
       <div
         ref={cardRef}
         data-glow
-        style={getInlineStyles()}
+        style={{ ...getInlineStyles(), ...style }}
         className={`
           ${getSizeClasses()}
           rounded-[24px]

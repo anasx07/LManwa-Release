@@ -45,11 +45,20 @@ export const metadata = {
   },
 };
 
+import { Navbar } from "@/components/layout/Navbar";
+import { Footer } from "@/components/layout/Footer";
+import StarfieldShader from "@/components/backgrounds/StarfieldShader";
+
 export default function RootLayout({ children }) {
   return (
-    <html lang="en" className={`${inter.variable} ${outfit.variable} dark`}>
-      <body className="antialiased">
-        {children}
+    <html lang="en" className={`${inter.variable} ${outfit.variable} dark scroll-smooth`}>
+      <body className="antialiased min-h-screen flex flex-col relative">
+        <StarfieldShader />
+        <Navbar />
+        <main className="flex-1 w-full flex flex-col items-center pt-32">
+          {children}
+        </main>
+        <Footer />
       </body>
     </html>
   );
